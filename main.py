@@ -3,6 +3,7 @@ import typer
 
 from core.context import ContextService
 from core.tools.docker import aplicar_stack
+from core.tools.discord import DiscordReporter
 
 app = Typer(
     name="zelador",
@@ -25,6 +26,21 @@ def process(
         "--tag",
         "-t",
         help="Tag da imagem Docker a ser utilizada no deploy"
+    ),
+    title: str = Option(
+        None,
+        "--title",
+        help="Título customizado para o relatório"
+    ),
+    commit: str = Option(
+        None,
+        "--commit",
+        help="Hash do commit para gerar link do GitHub"
+    ),
+    repo: str = Option(
+        None,
+        "--repo",
+        help="URL do repositório GitHub (ex: owner/repo ou https://github.com/owner/repo)"
     )
 ):
     """
@@ -49,10 +65,31 @@ def process(
     python main.py process minha-app worker -t production
     ```
     """
-    with ContextService(app_name=app_name, app_type=app_type, tag=tag) as ctx:
-        sucesso = aplicar_stack(ctx)
-        if not sucesso:
-            raise typer.Exit(code=1)
+    discord = DiscordReporter()
+    sucesso = False
+    erro_msg = None
+
+    try:
+        with ContextService(app_name=app_name, app_type=app_type, tag=tag) as ctx:
+            sucesso = aplicar_stack(ctx)
+    except Exception as e:
+        erro_msg = str(e)
+        sucesso = False
+
+    # Enviar relatório para Discord
+    discord.send_report(
+        success=sucesso,
+        app_name=app_name,
+        app_type=app_type,
+        tag=tag,
+        message=erro_msg,
+        title=title,
+        commit=commit,
+        repo=repo
+    )
+
+    if not sucesso:
+        raise typer.Exit(code=1)
 
 
 
