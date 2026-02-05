@@ -22,7 +22,7 @@ def process(
         help="Tipo da aplicação (ex: web, api, worker) - define qual arquivo compose usar"
     ),
     tag: str = Option(
-        "latest",
+        None,
         "--tag",
         "-t",
         help="Tag da imagem Docker a ser utilizada no deploy"
@@ -68,7 +68,8 @@ def process(
     discord = DiscordReporter()
     sucesso = False
     erro_msg = None
-
+    if tag is None:
+        tag = f"{app_type}_latest"
     try:
         with ContextService(app_name=app_name, app_type=app_type, tag=tag) as ctx:
             sucesso = aplicar_stack(ctx)

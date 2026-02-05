@@ -30,7 +30,7 @@ class ContextService:
         self.path: Path = Path(f'/services/{self.app_name}')
         self._compose_sufix: str = '.compose.yml'
 
-        self.image = f'{REGISTRY}/{self.stack_name}'
+        self.image = f'{REGISTRY}/{self.app_name}'
 
     def __enter__(self):
         if not self.path.is_dir():
