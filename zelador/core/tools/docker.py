@@ -37,7 +37,7 @@ def aplicar_stack(ctx: ContextService) -> bool:
                 timeout=60
             )
             # Aguardar remoção completa
-            time.sleep(3)
+            time.sleep(15)
         else:
             # Stack não existe - primeira vez
             logger.info(f"Stack '{stack_name}' não existe. Criando nova stack...")
