@@ -3,6 +3,31 @@ import subprocess
 import time
 from docker.errors import ImageNotFound
 
+def get_services_status(ctx: ContextService) -> list:
+    """Retorna lista de serviços com seu status (running ou não)"""
+    try:
+        stack_name = ctx.stack_name
+        client = ctx.client
+        servicos = client.services.list(filters={'label': f'com.docker.stack.namespace={stack_name}'})
+
+        status_list = []
+        for servico in servicos:
+            name = servico.name
+            # Contar tasks running vs total
+            tasks = client.tasks.list(filters={'service': name})
+            running = sum(1 for task in tasks if task.attrs['Status']['State'] == 'running')
+            total = len(tasks)
+
+            status_list.append({
+                'name': name,
+                'running': running > 0,
+                'tasks': f"{running}/{total}"
+            })
+
+        return status_list
+    except Exception:
+        return []
+
 def aplicar_stack(ctx: ContextService) -> bool:
     """Aplica/atualiza stack (funciona para tudo: primeira vez, updates, mudanças no compose)."""
     logger = ctx.logger

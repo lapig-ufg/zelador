@@ -127,3 +127,43 @@ class DiscordReporter:
 
         except Exception:
             return False
+
+    def send_services_status(self, stack_name: str, services: list):
+        """Envia status dos serviços em formato de tabela"""
+        if not self.enabled or not services:
+            return False
+
+        try:
+            # Construir tabela de serviços
+            table = "```\n"
+            table += f"{'Serviço':<30} {'Status':<15}\n"
+            table += "-" * 45 + "\n"
+
+            for service in services:
+                service_name = service['name'].split('_')[-1][:28]
+                status = "🟢 Online" if service['running'] else "🔴 Offline"
+                table += f"{service_name:<30} {status:<15}\n"
+
+            table += "```"
+
+            embed = {
+                "title": f"📊 Status da Stack: {stack_name}",
+                "color": 0x0099ff,
+                "description": table,
+                "timestamp": datetime.now().isoformat()
+            }
+
+            payload = {
+                "embeds": [embed]
+            }
+
+            response = requests.post(
+                self.webhook_url,
+                json=payload,
+                timeout=10
+            )
+
+            return response.status_code == 204
+
+        except Exception:
+            return False

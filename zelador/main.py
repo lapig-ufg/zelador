@@ -1,8 +1,9 @@
 from typer import Typer, Argument, Option
 import typer
+import time
 
 from zelador.core.context import ContextService
-from zelador.core.tools.docker import aplicar_stack
+from zelador.core.tools.docker import aplicar_stack, get_services_status
 from zelador.core.tools.discord import DiscordReporter
 
 app = Typer(
@@ -68,10 +69,12 @@ def process(
     discord = DiscordReporter()
     sucesso = False
     erro_msg = None
+    ctx = None
     if tag is None:
         tag = f"{app_type}_latest"
     try:
-        with ContextService(app_name=app_name, app_type=app_type, tag=tag) as ctx:
+        ctx = ContextService(app_name=app_name, app_type=app_type, tag=tag)
+        with ctx:
             sucesso = aplicar_stack(ctx)
     except Exception as e:
         erro_msg = str(e)
@@ -88,6 +91,19 @@ def process(
         commit=commit,
         repo=repo
     )
+
+    # Se deploy foi bem-sucedido, aguardar 15s e enviar status dos serviços
+    if sucesso and ctx:
+        print("Aguardando 15 segundos para verificar status dos serviços...")
+        time.sleep(15)
+
+        try:
+            with ContextService(app_name=app_name, app_type=app_type, tag=tag) as ctx:
+                services = get_services_status(ctx)
+                if services:
+                    discord.send_services_status(ctx.stack_name, services)
+        except Exception:
+            pass
 
     if not sucesso:
         raise typer.Exit(code=1)
