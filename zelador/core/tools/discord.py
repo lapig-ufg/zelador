@@ -1,8 +1,6 @@
 import os
-import json
 import requests
 from datetime import datetime
-from loguru import logger
 
 
 class DiscordReporter:
@@ -14,7 +12,6 @@ class DiscordReporter:
         self.image_error = os.getenv("IMAGE_ERROR")
 
         if not discord_key:
-            logger.warning("DISCORD_KEY não configurada. Relatórios do Discord desabilitados.")
             self.webhook_url = None
             self.enabled = False
         else:
@@ -126,13 +123,7 @@ class DiscordReporter:
                 timeout=10
             )
 
-            if response.status_code == 204:
-                logger.info(f"Relatório enviado para Discord: {app_name} ({tag})")
-                return True
-            else:
-                logger.error(f"Erro ao enviar relatório Discord: {response.status_code} - {response.text}")
-                return False
+            return response.status_code == 204
 
-        except Exception as e:
-            logger.error(f"Erro ao enviar relatório para Discord: {str(e)}")
+        except Exception:
             return False
