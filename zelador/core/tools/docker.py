@@ -1,5 +1,6 @@
 from zelador.core.context import ContextService
 import subprocess
+import time
 from docker.errors import ImageNotFound
 
 def aplicar_stack(ctx: ContextService) -> bool:
@@ -11,6 +12,18 @@ def aplicar_stack(ctx: ContextService) -> bool:
     new_image = ctx.image
     new_tag = ctx.tag
     try:
+        # Remover stack antiga para garantir que o compose atualizado seja aplicado
+        logger.info(f"Removendo stack antiga: {stack_name}...")
+        resultado_rm = subprocess.run(
+            ["docker", "stack", "rm", stack_name],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+
+        # Aguardar remoção completa
+        time.sleep(3)
+
         # Atualizar imagens da stack
         logger.info(f"Atualizando imagens da stack '{stack_name}'...")
         servicos = client.services.list(filters={'label': f'com.docker.stack.namespace={stack_name}'})
@@ -25,7 +38,7 @@ def aplicar_stack(ctx: ContextService) -> bool:
             logger.info(f"Pulling: {imagem}")
             client.images.pull(new_image, tag=new_tag)
 
-        # Aplicar stack
+        # Aplicar stack nova com compose atualizado
         logger.info(f"Aplicando stack: {stack_name}")
         resultado = subprocess.run(
             ["docker", "stack", "deploy", "-c", str(compose_file), stack_name],
@@ -34,7 +47,7 @@ def aplicar_stack(ctx: ContextService) -> bool:
         )
 
         if resultado.returncode == 0:
-            logger.success(f"✓ Stack '{stack_name}' aplicada")
+            logger.success(f"✓ Stack '{stack_name}' aplicada {resultado.stdout}")
             return True
 
         logger.error(f"Erro: {resultado.stderr}")
