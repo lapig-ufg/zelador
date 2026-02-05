@@ -1,9 +1,9 @@
 from typer import Typer, Argument, Option
 import typer
 
-from core.context import ContextService
-from core.tools.docker import aplicar_stack
-from core.tools.discord import DiscordReporter
+from zelador.core.context import ContextService
+from zelador.core.tools.docker import aplicar_stack
+from zelador.core.tools.discord import DiscordReporter
 
 app = Typer(
     name="zelador",

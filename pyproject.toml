@@ -13,4 +13,4 @@ dependencies = [
 ]
 
 [project.scripts]
-zelador = "main:app"
+zelador = "zelador.main:app"

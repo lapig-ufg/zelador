@@ -1,4 +1,4 @@
-from core.context import ContextService
+from zelador.core.context import ContextService
 import subprocess
 from docker.errors import ImageNotFound
 
