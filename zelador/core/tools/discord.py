@@ -9,14 +9,21 @@ class DiscordReporter:
     """Envia relatórios de deploy para Discord via webhook"""
 
     def __init__(self):
-        self.webhook_url = os.getenv("DISCORD_KEY")
+        discord_key = os.getenv("DISCORD_KEY")
         self.image_success = os.getenv("IMAGE_SUCCESS")
         self.image_error = os.getenv("IMAGE_ERROR")
 
-        if not self.webhook_url:
+        if not discord_key:
             logger.warning("DISCORD_KEY não configurada. Relatórios do Discord desabilitados.")
+            self.webhook_url = None
             self.enabled = False
         else:
+            # Se for apenas ID/TOKEN, construir URL completa
+            if discord_key.startswith("http://") or discord_key.startswith("https://"):
+                self.webhook_url = discord_key
+            else:
+                # Formato: ID/TOKEN
+                self.webhook_url = f"https://discordapp.com/api/webhooks/{discord_key}"
             self.enabled = True
 
     def _build_embed(self, success: bool, app_name: str, app_type: str, tag: str, message: str = None,
