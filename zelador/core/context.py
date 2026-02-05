@@ -19,6 +19,7 @@ class ContextService:
             tag: str
     ):
         logger.add(f'/services/logs/{app_name}.log',level='WARNING')
+
         self.logger = logger
         self.client = docker.DockerClient(base_url=DOCKER_SOCKET)
         self.app_name:str = app_name
