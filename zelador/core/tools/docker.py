@@ -12,32 +12,35 @@ def aplicar_stack(ctx: ContextService) -> bool:
     new_image = ctx.image
     new_tag = ctx.tag
     try:
-        # Remover stack antiga para garantir que o compose atualizado seja aplicado
-        logger.info(f"Removendo stack antiga: {stack_name}...")
-        resultado_rm = subprocess.run(
-            ["docker", "stack", "rm", stack_name],
-            capture_output=True,
-            text=True,
-            timeout=60
-        )
-
-        # Aguardar remoção completa
-        time.sleep(3)
-
-        # Atualizar imagens da stack
-        logger.info(f"Atualizando imagens da stack '{stack_name}'...")
+        # Verificar se a stack existe
         servicos = client.services.list(filters={'label': f'com.docker.stack.namespace={stack_name}'})
 
-        for servico in servicos:
-            imagem = servico.attrs['Spec']['TaskTemplate']['ContainerSpec']['Image'].split('@')[0]
-            try:
-                client.images.remove(imagem, force=True)
-            except ImageNotFound:
-                pass
+        if servicos:
+            # Stack existe - atualizar imagens e remover para redeployar com mudanças
+            logger.info(f"Atualizando imagens da stack '{stack_name}'...")
+            for servico in servicos:
+                imagem = servico.attrs['Spec']['TaskTemplate']['ContainerSpec']['Image'].split('@')[0]
+                try:
+                    client.images.remove(imagem, force=True)
+                except ImageNotFound:
+                    pass
 
-            logger.info(f"Pulling: {imagem}")
-            client.images.pull(new_image, tag=new_tag)
+                logger.info(f"Pulling: {imagem}")
+                client.images.pull(new_image, tag=new_tag)
 
+            # Remover stack antiga para garantir que o compose atualizado seja aplicado
+            logger.info(f"Removendo stack antiga: {stack_name}...")
+            subprocess.run(
+                ["docker", "stack", "rm", stack_name],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            # Aguardar remoção completa
+            time.sleep(3)
+        else:
+            # Stack não existe - primeira vez
+            logger.info(f"Stack '{stack_name}' não existe. Criando nova stack...")
         # Aplicar stack nova com compose atualizado
         logger.info(f"Aplicando stack: {stack_name}")
         resultado = subprocess.run(
