@@ -28,7 +28,7 @@ def get_services_status(ctx: ContextService) -> list:
     except Exception:
         return []
 
-def aplicar_stack(ctx: ContextService) -> bool:
+def aplicar_stack(ctx: ContextService, force: bool = False) -> bool:
     """Aplica/atualiza stack (funciona para tudo: primeira vez, updates, mudanças no compose)."""
     logger = ctx.logger
     stack_name = ctx.stack_name
@@ -59,8 +59,9 @@ def aplicar_stack(ctx: ContextService) -> bool:
                     logger.info(f"Pulling: {imagem_completa}")
                     client.images.pull(imagem_completa)
 
-            # Remover stack antiga para garantir que o compose atualizado seja aplicado
-            logger.info(f"Removendo stack antiga: {stack_name}...")
+        # Remover stack se existir OU se --force foi ativado
+        if force or servicos:
+            logger.info(f"Removendo stack: {stack_name}...")
             subprocess.run(
                 ["docker", "stack", "rm", stack_name],
                 capture_output=True,
@@ -70,7 +71,7 @@ def aplicar_stack(ctx: ContextService) -> bool:
             # Aguardar remoção completa
             time.sleep(15)
         else:
-            # Stack não existe - primeira vez
+            # Stack não existe e --force não foi ativado
             logger.info(f"Stack '{stack_name}' não existe. Criando nova stack...")
         # Aplicar stack nova com compose atualizado
         logger.info(f"Aplicando stack: {stack_name}")

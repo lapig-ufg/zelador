@@ -22,6 +22,12 @@ def process(
         ...,
         help="Tipo da aplicação (ex: web, api, worker) - define qual arquivo compose usar"
     ),
+    force: bool = Option(
+        False,
+        "--force",
+        "-f",
+        help="Força remoção da stack antes do deploy"
+    ),
     title: str = Option(
         None,
         "--title",
@@ -67,7 +73,7 @@ def process(
     try:
         ctx = ContextService(app_name=app_name, app_type=app_type)
         with ctx:
-            sucesso = aplicar_stack(ctx)
+            sucesso = aplicar_stack(ctx, force=force)
     except Exception as e:
         erro_msg = str(e)
         sucesso = False
