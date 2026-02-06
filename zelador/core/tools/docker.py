@@ -59,8 +59,8 @@ def aplicar_stack(ctx: ContextService, force: bool = False) -> bool:
                     logger.info(f"Pulling: {imagem_completa}")
                     client.images.pull(imagem_completa)
 
-        # Remover stack se existir OU se --force foi ativado
-        if force or servicos:
+        # Remover stack apenas se --force foi ativado
+        if force:
             logger.info(f"Removendo stack: {stack_name}...")
             subprocess.run(
                 ["docker", "stack", "rm", stack_name],
@@ -70,9 +70,7 @@ def aplicar_stack(ctx: ContextService, force: bool = False) -> bool:
             )
             # Aguardar remoção completa
             time.sleep(15)
-        else:
-            # Stack não existe e --force não foi ativado
-            logger.info(f"Stack '{stack_name}' não existe. Criando nova stack...")
+
         # Aplicar stack nova com compose atualizado
         logger.info(f"Aplicando stack: {stack_name}")
         resultado = subprocess.run(
