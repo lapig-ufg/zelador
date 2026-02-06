@@ -112,7 +112,8 @@ def process(
                 services = get_services_status(ctx)
                 if services:
                     discord.send_services_status(ctx.stack_name, services)
-        except Exception:
+        except Exception as e:
+            print(e)
             pass
 
     if not sucesso:
