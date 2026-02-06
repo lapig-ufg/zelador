@@ -2,6 +2,7 @@ import os
 import requests
 from datetime import datetime
 import pytz
+import tempfile
 
 
 class DiscordReporter:
@@ -114,7 +115,7 @@ class DiscordReporter:
 
     def send_report(self, success: bool, app_name: str, app_type: str, message: str = None,
                     title: str = None, commit: str = None, repo: str = None, logs: str = None):
-        """Envia relatório para Discord com logs opcionais"""
+        """Envia relatório para Discord com arquivo de logs opcional"""
         if not self.enabled:
             return False
 
@@ -122,27 +123,40 @@ class DiscordReporter:
             embed = self._build_embed(success, app_name, app_type, message=message, title=title, commit=commit, repo=repo)
             embeds = [embed]
 
-            # Se houver logs, adicionar em um segundo embed
-            if logs:
-                tz_sp = pytz.timezone('America/Sao_Paulo')
-                timestamp_sp = datetime.now(tz_sp).isoformat()
-                logs_embed = {
-                    "title": "📋 Logs da Operação",
-                    "description": f"```\n{logs}\n```",
-                    "color": 0x808080,
-                    "timestamp": timestamp_sp
-                }
-                embeds.append(logs_embed)
-
-            payload = {
-                "embeds": embeds
+            # Preparar dados multipart
+            data = {
+                "payload_json": __import__("json").dumps({"embeds": embeds})
             }
 
-            response = requests.post(
-                self.webhook_url,
-                json=payload,
-                timeout=10
-            )
+            # Se houver logs, adicionar arquivo .txt
+            files = {}
+            if logs:
+                # Criar arquivo temporário com os logs
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+                    f.write(logs)
+                    temp_file = f.name
+
+                # Abrir e enviar o arquivo
+                files['file'] = ('logs.txt', open(temp_file, 'rb'), 'text/plain')
+
+            # Enviar com multipart/form-data se houver arquivo
+            if files:
+                response = requests.post(
+                    self.webhook_url,
+                    data=data,
+                    files=files,
+                    timeout=10
+                )
+                # Fechar arquivo
+                files['file'][1].close()
+                os.unlink(temp_file)
+            else:
+                # Enviar apenas embed se não houver logs
+                response = requests.post(
+                    self.webhook_url,
+                    json={"embeds": embeds},
+                    timeout=10
+                )
 
             return response.status_code == 204
 
