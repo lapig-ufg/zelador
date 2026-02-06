@@ -34,8 +34,6 @@ def aplicar_stack(ctx: ContextService) -> bool:
     stack_name = ctx.stack_name
     client = ctx.client
     compose_file = ctx.compose_file
-    new_image = ctx.image
-    new_tag = ctx.tag
     try:
         # Verificar se a stack existe
         servicos = client.services.list(filters={'label': f'com.docker.stack.namespace={stack_name}'})
@@ -49,17 +47,16 @@ def aplicar_stack(ctx: ContextService) -> bool:
                 # Extrair imagem e tag específicos
                 if ':' in imagem_completa:
                     imagem, tag = imagem_completa.rsplit(':', 1)
+                    logger.info(f"Pulling: {imagem}:{tag}")
+                    client.images.pull(imagem, tag=tag)
                 else:
-                    imagem = imagem_completa
-                    tag = new_tag
+                    logger.info(f"Pulling: {imagem_completa}")
+                    client.images.pull(imagem_completa)
 
                 try:
                     client.images.remove(imagem_completa, force=True)
                 except ImageNotFound:
                     pass
-
-                logger.info(f"Pulling: {imagem}:{tag}")
-                client.images.pull(imagem, tag=tag)
 
             # Remover stack antiga para garantir que o compose atualizado seja aplicado
             logger.info(f"Removendo stack antiga: {stack_name}...")
