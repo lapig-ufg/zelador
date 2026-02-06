@@ -43,6 +43,10 @@ class DiscordReporter:
         embed = {
             "title": f"{status} - {embed_title}",
             "color": color,
+            "author": {
+                "name": "Zelador Deploy",
+                "icon_url": image
+            },
             "fields": [
                 {
                     "name": "Aplicação",
@@ -62,6 +66,13 @@ class DiscordReporter:
             ],
             "thumbnail": {
                 "url": image
+            },
+            "image": {
+                "url": image
+            },
+            "footer": {
+                "text": "Zelador",
+                "icon_url": image
             }
         }
 
