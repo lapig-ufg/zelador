@@ -1,6 +1,7 @@
 import os
 import requests
 from datetime import datetime
+import pytz
 
 
 class DiscordReporter:
@@ -26,7 +27,8 @@ class DiscordReporter:
     def _build_embed(self, success: bool, app_name: str, app_type: str, message: str = None,
                      title: str = None, commit: str = None, repo: str = None):
         """Constrói um embed Discord para o relatório"""
-        timestamp = datetime.now().isoformat()
+        tz_sp = pytz.timezone('America/Sao_Paulo')
+        timestamp = datetime.now(tz_sp).strftime("%d/%m/%Y %H:%M:%S")
 
         if success:
             color = 0x00ff00  # Verde
@@ -122,11 +124,13 @@ class DiscordReporter:
 
             # Se houver logs, adicionar em um segundo embed
             if logs:
+                tz_sp = pytz.timezone('America/Sao_Paulo')
+                timestamp_sp = datetime.now(tz_sp).isoformat()
                 logs_embed = {
                     "title": "📋 Logs da Operação",
                     "description": f"```\n{logs}\n```",
                     "color": 0x808080,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": timestamp_sp
                 }
                 embeds.append(logs_embed)
 
@@ -163,11 +167,14 @@ class DiscordReporter:
 
             table += "```"
 
+            tz_sp = pytz.timezone('America/Sao_Paulo')
+            timestamp_sp = datetime.now(tz_sp).isoformat()
+
             embed = {
                 "title": f"📊 Status da Stack: {stack_name}",
                 "color": 0x0099ff,
                 "description": table,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": timestamp_sp
             }
 
             payload = {
