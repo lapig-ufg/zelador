@@ -71,24 +71,12 @@ class DiscordReporter:
                 "url": image
             },
             "footer": {
-                "text": "Zelador",
-                "icon_url": image
+                "text": f"Zelador • {timestamp}"
             }
         }
 
-        # Adicionar link do commit se disponível
-        if commit and repo:
-            # Normalizar o repo (remover https://github.com/ se presente)
-            repo_url = repo.replace("https://github.com/", "").replace("http://github.com/", "").rstrip("/")
-            commit_url = f"https://github.com/{repo_url}/commit/{commit}"
-            commit_short = commit[:7]
-            embed["fields"].append({
-                "name": "Commit",
-                "value": f"[{commit_short}]({commit_url})",
-                "inline": True
-            })
-
-        # Adicionar link do repositório se disponível
+        # Adicionar links (commit e repositório)
+        links = []
         if repo:
             # Normalizar o repo
             repo_url = repo.replace("https://github.com/", "").replace("http://github.com/", "").rstrip("/")
@@ -96,10 +84,21 @@ class DiscordReporter:
                 repo_full_url = f"https://github.com/{repo_url}"
             else:
                 repo_full_url = repo
+            links.append(f"[Repositório]({repo_full_url})")
+
+        if commit and repo:
+            # Normalizar o repo (remover https://github.com/ se presente)
+            repo_url = repo.replace("https://github.com/", "").replace("http://github.com/", "").rstrip("/")
+            commit_url = f"https://github.com/{repo_url}/commit/{commit}"
+            commit_short = commit[:7]
+            links.append(f"[Commit {commit_short}]({commit_url})")
+
+        # Adicionar campo de links se houver
+        if links:
             embed["fields"].append({
-                "name": "Repositório",
-                "value": f"[{repo_url}]({repo_full_url})",
-                "inline": True
+                "name": "Links",
+                "value": " • ".join(links),
+                "inline": False
             })
 
         if message:
