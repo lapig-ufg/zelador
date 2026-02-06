@@ -44,7 +44,13 @@ def aplicar_stack(ctx: ContextService) -> bool:
             for servico in servicos:
                 imagem_completa = servico.attrs['Spec']['TaskTemplate']['ContainerSpec']['Image'].split('@')[0]
 
-                # Extrair imagem e tag específicos
+                # Remover imagem antiga primeiro
+                try:
+                    client.images.remove(imagem_completa, force=True)
+                except ImageNotFound:
+                    pass
+
+                # Depois puxar a imagem nova
                 if ':' in imagem_completa:
                     imagem, tag = imagem_completa.rsplit(':', 1)
                     logger.info(f"Pulling: {imagem}:{tag}")
@@ -52,11 +58,6 @@ def aplicar_stack(ctx: ContextService) -> bool:
                 else:
                     logger.info(f"Pulling: {imagem_completa}")
                     client.images.pull(imagem_completa)
-
-                try:
-                    client.images.remove(imagem_completa, force=True)
-                except ImageNotFound:
-                    pass
 
             # Remover stack antiga para garantir que o compose atualizado seja aplicado
             logger.info(f"Removendo stack antiga: {stack_name}...")
