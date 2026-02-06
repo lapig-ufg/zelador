@@ -15,8 +15,7 @@ class ContextService:
     def __init__(
             self,
             app_name:str,
-            app_type:str,
-            tag: str
+            app_type:str
     ):
         logger.add(f'/services/logs/{app_name}.log',level='WARNING')
 
@@ -24,13 +23,10 @@ class ContextService:
         self.client = docker.DockerClient(base_url=DOCKER_SOCKET)
         self.app_name:str = app_name
         self.app_type:str = app_type
-        self.tag:str = tag
         self.stack_name:str = f"{app_type}_{app_name}"
         self.registry:str = REGISTRY
         self.path: Path = Path(f'/services/{self.app_name}')
         self._compose_sufix: str = '.compose.yml'
-
-        self.image = f'{REGISTRY}/{self.app_name}'
 
     def __enter__(self):
         if not self.path.is_dir():

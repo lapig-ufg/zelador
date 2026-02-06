@@ -22,12 +22,6 @@ def process(
         ...,
         help="Tipo da aplicação (ex: web, api, worker) - define qual arquivo compose usar"
     ),
-    tag: str = Option(
-        None,
-        "--tag",
-        "-t",
-        help="Tag da imagem Docker a ser utilizada no deploy"
-    ),
     title: str = Option(
         None,
         "--title",
@@ -70,10 +64,8 @@ def process(
     sucesso = False
     erro_msg = None
     ctx = None
-    if tag is None:
-        tag = f"{app_type}_latest"
     try:
-        ctx = ContextService(app_name=app_name, app_type=app_type, tag=tag)
+        ctx = ContextService(app_name=app_name, app_type=app_type)
         with ctx:
             sucesso = aplicar_stack(ctx)
     except Exception as e:
@@ -85,7 +77,6 @@ def process(
         success=sucesso,
         app_name=app_name,
         app_type=app_type,
-        tag=tag,
         message=erro_msg,
         title=title,
         commit=commit,
@@ -98,7 +89,7 @@ def process(
         time.sleep(15)
 
         try:
-            with ContextService(app_name=app_name, app_type=app_type, tag=tag) as ctx:
+            with ContextService(app_name=app_name, app_type=app_type) as ctx:
                 services = get_services_status(ctx)
                 if services:
                     discord.send_services_status(ctx.stack_name, services)

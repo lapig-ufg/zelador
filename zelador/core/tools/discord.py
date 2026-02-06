@@ -23,7 +23,7 @@ class DiscordReporter:
                 self.webhook_url = f"https://discordapp.com/api/webhooks/{discord_key}"
             self.enabled = True
 
-    def _build_embed(self, success: bool, app_name: str, app_type: str, tag: str, message: str = None,
+    def _build_embed(self, success: bool, app_name: str, app_type: str, message: str = None,
                      title: str = None, commit: str = None, repo: str = None):
         """Constrói um embed Discord para o relatório"""
         timestamp = datetime.now().isoformat()
@@ -52,11 +52,6 @@ class DiscordReporter:
                 {
                     "name": "Tipo",
                     "value": app_type,
-                    "inline": True
-                },
-                {
-                    "name": "Tag",
-                    "value": tag,
                     "inline": True
                 },
                 {
@@ -105,14 +100,14 @@ class DiscordReporter:
 
         return embed
 
-    def send_report(self, success: bool, app_name: str, app_type: str, tag: str, message: str = None,
+    def send_report(self, success: bool, app_name: str, app_type: str, message: str = None,
                     title: str = None, commit: str = None, repo: str = None):
         """Envia relatório para Discord"""
         if not self.enabled:
             return False
 
         try:
-            embed = self._build_embed(success, app_name, app_type, tag, message, title, commit, repo)
+            embed = self._build_embed(success, app_name, app_type, message=message, title=title, commit=commit, repo=repo)
             payload = {
                 "embeds": [embed]
             }
