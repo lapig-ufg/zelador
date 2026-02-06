@@ -5,6 +5,7 @@ import time
 from zelador.core.context import ContextService
 from zelador.core.tools.docker import aplicar_stack, get_services_status
 from zelador.core.tools.discord import DiscordReporter
+from zelador.core.tools.discord_logger import DiscordLogCapture
 
 app = Typer(
     name="zelador",
@@ -67,9 +68,14 @@ def process(
     ```
     """
     discord = DiscordReporter()
+    log_capture = DiscordLogCapture()
     sucesso = False
     erro_msg = None
     ctx = None
+
+    # Iniciar captura de logs
+    log_capture.start()
+
     try:
         ctx = ContextService(app_name=app_name, app_type=app_type)
         with ctx:
@@ -77,6 +83,12 @@ def process(
     except Exception as e:
         erro_msg = str(e)
         sucesso = False
+
+    # Parar captura de logs
+    log_capture.stop()
+
+    # Obter logs capturados
+    logs_text = log_capture.get_logs(limit=30)
 
     # Enviar relatório para Discord
     discord.send_report(
@@ -86,7 +98,8 @@ def process(
         message=erro_msg,
         title=title,
         commit=commit,
-        repo=repo
+        repo=repo,
+        logs=logs_text
     )
 
     # Se deploy foi bem-sucedido, aguardar 15s e enviar status dos serviços

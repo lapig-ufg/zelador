@@ -101,15 +101,27 @@ class DiscordReporter:
         return embed
 
     def send_report(self, success: bool, app_name: str, app_type: str, message: str = None,
-                    title: str = None, commit: str = None, repo: str = None):
-        """Envia relatório para Discord"""
+                    title: str = None, commit: str = None, repo: str = None, logs: str = None):
+        """Envia relatório para Discord com logs opcionais"""
         if not self.enabled:
             return False
 
         try:
             embed = self._build_embed(success, app_name, app_type, message=message, title=title, commit=commit, repo=repo)
+            embeds = [embed]
+
+            # Se houver logs, adicionar em um segundo embed
+            if logs:
+                logs_embed = {
+                    "title": "📋 Logs da Operação",
+                    "description": f"```\n{logs}\n```",
+                    "color": 0x808080,
+                    "timestamp": datetime.now().isoformat()
+                }
+                embeds.append(logs_embed)
+
             payload = {
-                "embeds": [embed]
+                "embeds": embeds
             }
 
             response = requests.post(
