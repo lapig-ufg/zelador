@@ -1,11 +1,13 @@
 from typer import Typer, Argument, Option
 import typer
 import time
+from loguru import logger
 
 from zelador.core.context import ContextService
 from zelador.core.tools.docker import aplicar_stack, get_services_status
 from zelador.core.tools.discord import DiscordReporter
 from zelador.core.tools.discord_logger import DiscordLogCapture
+from zelador.core.logging_config import setup_logging, cleanup_logging
 
 app = Typer(
     name="zelador",
@@ -28,6 +30,12 @@ def process(
         "--force",
         "-f",
         help="Força remoção da stack antes do deploy"
+    ),
+    verbose: bool = Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Mostra logs no console durante a execução"
     ),
     title: str = Option(
         None,
@@ -73,7 +81,10 @@ def process(
     erro_msg = None
     ctx = None
 
-    # Iniciar captura de logs
+    # Configurar todos os handlers de logging
+    handler_ids = setup_logging(app_name, verbose=verbose)
+
+    # Iniciar captura de logs para Discord
     log_capture.start()
 
     try:
@@ -82,13 +93,28 @@ def process(
             sucesso = aplicar_stack(ctx, force=force)
     except Exception as e:
         erro_msg = str(e)
+        logger.error(f"Erro durante deploy: {e}")
         sucesso = False
 
-    # Parar captura de logs
+    # Se deploy foi bem-sucedido, aguardar 15s e enviar status dos serviços
+    if sucesso and ctx:
+        logger.info("Aguardando 15 segundos para verificar status dos serviços...")
+        time.sleep(15)
+
+        try:
+            with ContextService(app_name=app_name, app_type=app_type) as ctx:
+                services = get_services_status(ctx)
+                if services:
+                    logger.info(f"Serviços encontrados: {len(services)}")
+                    discord.send_services_status(ctx.stack_name, services)
+        except Exception as e:
+            logger.error(f"Erro ao verificar status dos serviços: {e}")
+
+    # Parar captura de logs (DEPOIS de tudo)
     log_capture.stop()
 
-    # Obter logs capturados
-    logs_text = log_capture.get_logs(limit=30)
+    # Obter todos os logs capturados
+    logs_text = log_capture.get_all_logs()
 
     # Enviar relatório para Discord
     discord.send_report(
@@ -102,19 +128,8 @@ def process(
         logs=logs_text
     )
 
-    # Se deploy foi bem-sucedido, aguardar 15s e enviar status dos serviços
-    if sucesso and ctx:
-        print("Aguardando 15 segundos para verificar status dos serviços...")
-        time.sleep(15)
-
-        try:
-            with ContextService(app_name=app_name, app_type=app_type) as ctx:
-                services = get_services_status(ctx)
-                if services:
-                    discord.send_services_status(ctx.stack_name, services)
-        except Exception as e:
-            print(e)
-            pass
+    # Limpar handlers ao final
+    cleanup_logging(handler_ids)
 
     if not sucesso:
         raise typer.Exit(code=1)

@@ -3,6 +3,7 @@ import requests
 from datetime import datetime
 import pytz
 import tempfile
+from loguru import logger
 
 
 class DiscordReporter:
@@ -160,7 +161,8 @@ class DiscordReporter:
 
             return response.status_code == 204
 
-        except Exception:
+        except Exception as e:
+            logger.error(f"Erro ao enviar relatório para Discord: {e}")
             return False
 
     def send_services_status(self, stack_name: str, services: list):
@@ -203,5 +205,6 @@ class DiscordReporter:
 
             return response.status_code == 204
 
-        except Exception:
+        except Exception as e:
+            logger.error(f"Erro ao enviar status dos serviços para Discord: {e}")
             return False
