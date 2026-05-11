@@ -7,7 +7,6 @@ from zelador.core.context import ContextService
 from zelador.core.tools.docker import aplicar_stack, get_services_status
 from zelador.core.tools.discord import DiscordReporter
 from zelador.core.tools.discord_logger import DiscordLogCapture
-from zelador.core.logging_config import setup_logging, cleanup_logging
 
 app = Typer(
     name="zelador",
@@ -81,8 +80,7 @@ def process(
     erro_msg = None
     ctx = None
 
-    # Configurar todos os handlers de logging
-    handler_ids = setup_logging(app_name, verbose=verbose)
+    
 
     # Iniciar captura de logs para Discord
     log_capture.start()
@@ -129,8 +127,7 @@ def process(
     )
 
     # Limpar handlers ao final
-    cleanup_logging(handler_ids)
-
+    
     if not sucesso:
         raise typer.Exit(code=1)
 
