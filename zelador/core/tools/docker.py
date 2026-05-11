@@ -14,9 +14,8 @@ def get_services_status(ctx: ContextService) -> list:
         status_list = []
         for servico in servicos:
             name = servico.name
-            # Contar tasks running vs total
-            tasks = client.tasks.list(filters={'service': name})
-            running = sum(1 for task in tasks if task.attrs['Status']['State'] == 'running')
+            tasks = servico.tasks()
+            running = sum(1 for task in tasks if task['Status']['State'] == 'running')
             total = len(tasks)
 
             status_list.append({
